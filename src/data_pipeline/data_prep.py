@@ -41,8 +41,8 @@ class PreProcessing:
         #     if col in self.dongnae.columns:
         #         if not np.issubdtype(self.dongnae[col].dtype, np.datetime64):
         #             self.dongnae[col] = pd.to_datetime(self.dongnae[col], errors='coerce')
-        self.dongnae['입차시간'] = pd.to_datetime(self.dongnae['입차시간'],  format="mixed", errors="raise")
-        self.dongnae['출차시간'] = pd.to_datetime(self.dongnae['출차시간'],  format="mixed", errors="raise")
+        self.dongnae['입차시간'] = pd.to_datetime(self.dongnae['입차일시'],  format="mixed", errors="raise")
+        self.dongnae['출차시간'] = pd.to_datetime(self.dongnae['출차일시'],  format="mixed", errors="raise")
 
         return self
 

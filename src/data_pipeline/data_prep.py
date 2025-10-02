@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 from typing import List, Dict, Optional, Iterable
 from .result_checker import ResultChecker
+from ._helpers import DataHandler
 
 class PreProcessing:
     # 가용면 계산 시 제외할 전용면 후보 컬럼
@@ -206,6 +207,9 @@ class PreProcessing:
         self.hourly_detail: pd.DataFrame = pd.DataFrame(
             hourly_rows, columns=['날짜', '시간대', '유지시간_분']
         )
+
+        # 요일 추가 
+        self.hourly_detail = DataHandler.add_weekday_column(self.hourly_detail)
         # 집계(전체)
         self._compute_summaries()
         # 집계(평일/주말 분리)
@@ -364,6 +368,12 @@ class PreProcessing:
             occ_total = (self.hourly_detail.groupby('시간대')
                         .size()
                         .rename('발생횟수_총').reset_index())
+            
+            # 요일별 '만차 발생 횟수'(조각 수)
+            self.dow_total = (self.hourly_detail.groupby('요일')
+                        .size()
+                        .rename('발생횟수_총').reset_index())
+
 
             # 시간대별 '만차 시작 횟수'(False -> True 전이)
             starts_mask = self.combined_df['만차상태'] & (~self.combined_df['만차상태'].shift(fill_value=False))

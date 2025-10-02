@@ -28,12 +28,13 @@ class ResultReporter:
 
     def export_results(
         self,
-        encoding: str = 'cp949'
+        folder_name, 
+        encoding: str = 'cp949',
     ) -> None:
         """마지막 분석 결과를 CSV로 저장 (평일/주말, 일수 테이블 포함)"""
         if self.prep.last_result is None:
             raise RuntimeError("먼저 analyze()를 실행하세요.")
 
         for key, df in self.prep.last_result.items():
-            file = PROCESSED_DATA_DIR / f"{key}.csv"
+            file = PROCESSED_DATA_DIR / folder_name / f"{key}.csv"
             df.to_csv(file, index=False, encoding=encoding)

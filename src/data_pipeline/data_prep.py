@@ -363,6 +363,12 @@ class PreProcessing:
                         .agg(총유지시간_분=('유지시간_분', 'sum'),
                             만차발생일수=('날짜', 'nunique'))
                         .reset_index())
+            
+            # 요일별 총 유지시간 & 만차발생일수
+            self.dow_agg = (self.hourly_detail.groupby('요일')
+                        .agg(총유지시간_분=('유지시간_분', 'sum'),
+                            만차발생일수=('날짜', 'nunique'))
+                        .reset_index())
 
             # 시간대별 '만차 발생 횟수'(조각 수)
             occ_total = (self.hourly_detail.groupby('시간대')
@@ -386,6 +392,11 @@ class PreProcessing:
                             .merge(start_counts, on='시간대', how='outer')
                             .fillna({'총유지시간_분': 0.0, '만차발생일수': 0,
                                     '발생횟수_총': 0, '만차시작횟수_총': 0}))
+            
+            # 요일-평균(평균유지시간_분(발생일기준))
+            self.dow_agg['평균유지시간_분(발생일기준)'] = self.safe_div(
+                self.dow_agg['총유지시간_분'], self.dow_agg['만차발생일수']
+                )
 
             # 평균(발생일/전체일)
             self.hourly_summary['평균유지시간_분(발생일기준)'] = self.safe_div(

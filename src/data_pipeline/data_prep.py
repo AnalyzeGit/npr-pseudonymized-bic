@@ -70,13 +70,13 @@ class PreProcessing:
         """
 
         self.entries: pd.DataFrame = (
-            self.sel_dongnae.loc[self.sel_dongnae['입차시간'].notna(), ['차량번호', '입차시간']]
+            self.sel_dongnae.loc[self.sel_dongnae['입차시간'].notna(), ['차량번호', '입차유형', '입차시간']]
             .rename(columns={'입차시간': '기준시간'})
             .assign(입출구분='입차')
             )
         
         self.exits: pd.DataFrame = (
-            self.sel_dongnae.loc[self.sel_dongnae['출차시간'].notna(), ['차량번호', '출차시간']] 
+            self.sel_dongnae.loc[self.sel_dongnae['출차시간'].notna(), ['차량번호', '입차유형', '출차시간']] 
             .rename(columns={'출차시간': '기준시간'})
             .assign(입출구분='출차')
             )
@@ -146,7 +146,7 @@ class PreProcessing:
             pd.DataFrame: 만차 구간의 시작/종료 시각을 담은 DataFrame
                 - 컬럼: ['시작', '종료']
         """
-        groups:pd.DataFrame = (
+        groups: pd.DataFrame = (
                 self.combined_df.groupby('만차그룹')
                 .agg(시작=('기준시간', 'first'), 상태=('만차상태', 'first'))
                 .reset_index(drop=True)
@@ -317,6 +317,7 @@ class PreProcessing:
             ValueError: parking_info에 self.lot_name에 해당하는 데이터가 없을 때
         """
         lot_row: pd.DataFrame = self.parking_info[self.parking_info['주차장명'] == self.lot_name].copy()
+        print(f"주차장 추출: {lot_row['주차장명'].iloc[0]}")
 
         if lot_row.empty:
             raise ValueError(f"parking_info에 '{self.lot_name}' 데이터가 없습니다.")
@@ -333,6 +334,7 @@ class PreProcessing:
             reserved_sum = 0
 
         available: int = int(total_slots - reserved_sum)
+        print(f"가용면 수: {max(0, available)}")
 
         return max(0, available)  # 방어
     

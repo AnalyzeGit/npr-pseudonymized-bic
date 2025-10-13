@@ -57,6 +57,15 @@ class PreProcessing:
         self.sel_dongnae: pd.DataFrame = self.dongnae[self.dongnae['주차장명'] == self.lot_name]
 
         return self
+    
+    def apply_classify_dominant_day(self) -> "PreProcessing":
+        """
+        각 행의 입차일시와 출차일시를 기반으로 평일/주말 체류 시간을 계산하고,
+        더 긴 체류 시간을 기준으로 '이용요일구분' 컬럼을 생성한다.
+        """
+        self.dongnae = DataHandler.remove_missing_values(self.dongnae)
+        self.dongnae['이용요일구분'] = self.dongnae.apply(DataHandler.classify_dominant_day, axis=1)
+        return self
 
     def combine_events(self) -> "PreProcessing":
         """
@@ -266,6 +275,7 @@ class PreProcessing:
         result = (
                 self.convert_datetime_cols()
                 .filter_by_lot()
+                .apply_classify_dominant_day()
                 .combine_events()
             )
         

@@ -40,3 +40,64 @@ class DataHandler:
     @staticmethod
     def remove_missing_values(df: pd.DataFrame) -> pd.DataFrame:
         return df.dropna(subset='출차일시')
+    
+
+    @staticmethod
+    # (3). 정기권 + 주간 정기권 + 야간 정기권 -> 정기권 / 나머지 비정기권
+    def calculate_parking_duration(df: pd.DataFrame) -> pd.DataFrame:
+        # 문자열을 datetime 타입으로 변환
+        df['입차일시'] = pd.to_datetime(df['입차일시'])
+        df['출차일시'] = pd.to_datetime(df['출차일시'])
+        
+        # 이용시간(분) 계산
+        df['이용시간(분)'] = (df['출차일시'] - df['입차일시']).dt.total_seconds() / 60
+
+        # 이용시간(시간)으로도 추가
+        df['이용시간(시간)'] = df['이용시간(분)'] / 60
+        return df
+    
+
+    @staticmethod
+    def flag_regular_customers(df: pd.DataFrame) -> pd.DataFrame:
+        df['is_regular'] = False
+        df.loc[df['입차유형'].isin(['정기권', '주간정기권', '야간정기권']), 'is_regular'] = True
+        return df
+    
+    @staticmethod
+    def aggregate_by_hour(df: pd.DataFrame) -> pd.DataFrame:
+        # === 핵심 로직: 시간대별 집계 ===
+        usage = []
+        for h in range(24):
+            count = ((df["입차일시"].dt.hour*60 + df["입차일시"].dt.minute < h*60+60) &
+                    (df["출차일시"].dt.hour*60 + df["출차일시"].dt.minute >= h*60)).sum()
+        
+            usage.append({"hour": h, "users": count})
+        
+        usage_df = pd.DataFrame(usage)
+        return usage_df
+    
+    
+    @staticmethod
+    def avg_daily_entries_by_hour(df: pd.DataFrame) -> pd.DataFrame:
+        """
+        여러 날짜 데이터에서
+        시간대별 하루 평균 입차 차량 수(회전율)를 계산하는 함수
+        """
+
+        # 1️⃣ 날짜·시간 처리
+        df['입차일시'] = pd.to_datetime(df['입차일시'])
+        df['입차일'] = df['입차일시'].dt.date          # 입차일 (일자 단위)
+        df['입차_시'] = df['입차일시'].dt.hour
+
+        # 2️⃣ 각 날짜(day)·시간대(hour)별 입차 대수
+        daily_counts = df.groupby(['입차일', '입차_시']).size().reset_index(name='입차대수')
+
+        # 3️⃣ 시간대별 평균 (즉, 하루 평균 입차량)
+        avg_per_hour = (
+            daily_counts.groupby('입차_시')['입차대수']
+            .mean()
+            .reset_index(name='평균입차대수')
+            .rename(columns={'입차_시': 'hour'})
+        )
+
+        return avg_per_hour
